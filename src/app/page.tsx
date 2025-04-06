@@ -154,7 +154,7 @@ export default function Home() {
             : "Indexed to 100"}
         </span>
         <span className="whitespace-nowrap text-gray-500">
-          {"<"}== click me!
+          {"<"}== click me! (send me thoughts on this on discord!)
         </span>
       </div>
       <div ref={chartContainerRef} id="apple" className="w-full flex-1"></div>
