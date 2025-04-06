@@ -5,14 +5,14 @@ import {
   IChartApi,
   ISeriesApi,
   LineSeries,
-  PriceScaleMode,
   TickMarkFormatter,
+  UTCTimestamp,
 } from "lightweight-charts";
 import { useEffect, useRef, useState } from "react";
 
 export default function Home() {
   const chartContainerRef = useRef<HTMLDivElement>(null);
-  const [data, setData] = useState<any | null>(null);
+  const [data, setData] = useState<unknown | null>(null);
   const [priceScaleMode, setPriceScaleMode] = useState("0");
   const [range, setRange] = useState("11");
   const rangeAsNumber = +range; // 11 = all
@@ -35,8 +35,11 @@ export default function Home() {
     const { current: chart } = chartRef;
     if (!chart || !data) return;
 
-    const datasets: Record<string, { time: string; value: number }[]> = {};
-    for (const { collection_time, data: dat } of data) {
+    const datasets: Record<string, { time: number; value: number }[]> = {};
+    for (const { collection_time, data: dat } of data as {
+      collection_time: UTCTimestamp;
+      data: string;
+    }[]) {
       for (const { playerName, trophyPoints } of JSON.parse(dat).isTop) {
         if (!(playerName in datasets)) {
           datasets[playerName] = [];
