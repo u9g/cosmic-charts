@@ -1,103 +1,158 @@
-import Image from "next/image";
+"use client";
+
+import {
+  createChart,
+  IChartApi,
+  ISeriesApi,
+  LineSeries,
+  PriceScaleMode,
+  TickMarkFormatter,
+} from "lightweight-charts";
+import { useEffect, useRef, useState } from "react";
 
 export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+  const chartContainerRef = useRef<HTMLDivElement>(null);
+  const [data, setData] = useState<any | null>(null);
+  const [priceScaleMode, setPriceScaleMode] = useState("0");
+  const [range, setRange] = useState("11");
+  const rangeAsNumber = +range; // 11 = all
+  const priceScaleModeAsNumber = +priceScaleMode;
+  const chartRef = useRef<IChartApi>(null);
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
+  useEffect(() => {
+    async function getData() {
+      const results = await fetch(
+        "https://shiny-water-0f27.aibotted849.workers.dev/"
+      ).then((res) => res.json());
+
+      return results;
+    }
+
+    getData().then((newData) => setData(newData));
+  }, []);
+
+  useEffect(() => {
+    const { current: chart } = chartRef;
+    if (!chart || !data) return;
+
+    const datasets: Record<string, { time: string; value: number }[]> = {};
+    for (const { collection_time, data: dat } of data) {
+      for (const { playerName, trophyPoints } of JSON.parse(dat).isTop) {
+        if (!(playerName in datasets)) {
+          datasets[playerName] = [];
+        }
+
+        datasets[playerName].push({
+          time: collection_time,
+          value: trophyPoints,
+        });
+      }
+    }
+
+    const allSeries: ISeriesApi<"Line">[] = [];
+
+    for (const [playerName, data1] of Object.entries(datasets)
+      .sort(([, a], [, b]) => b.at(-1)!.value - a.at(-1)!.value)
+      .filter((_, ix) => rangeAsNumber === 11 || ix < rangeAsNumber)) {
+      const lineSeries = chart.addSeries(LineSeries);
+      allSeries.push(lineSeries);
+      lineSeries.setData(data1);
+      lineSeries.applyOptions({
+        title: playerName,
+        color: ["blue", "green", "red", "orange", "purple", "pink"][
+          Math.floor(Math.random() * 7)
+        ],
+      });
+    }
+    chart.timeScale().fitContent();
+
+    chart.applyOptions({
+      rightPriceScale: {
+        mode: priceScaleModeAsNumber,
+      },
+    });
+
+    return () => {
+      allSeries.forEach((series) => {
+        chart.removeSeries(series);
+      });
+    };
+  }, [data, rangeAsNumber, priceScaleModeAsNumber]);
+
+  useEffect(() => {
+    const chart = createChart("apple", {
+      width: chartContainerRef.current!.clientWidth,
+      height: chartContainerRef.current!.clientHeight,
+      timeScale: {
+        timeVisible: true, //(time: Time, tickMarkType: TickMarkType, locale: string) => string | null
+        tickMarkFormatter: ((time, tickMarkType, locale) => {
+          return new Date((time.valueOf() as number) * 1000).toLocaleString(
+            locale
+          );
+        }) as TickMarkFormatter,
+        // minBarSpacing: 140,
+      },
+    });
+
+    const handleResize = () => {
+      chart.applyOptions({
+        width: chartContainerRef.current!.clientWidth,
+        height: chartContainerRef.current!.clientHeight,
+      });
+    };
+
+    window.addEventListener("resize", handleResize);
+
+    chartRef.current = chart;
+    return () => {
+      window.removeEventListener("resize", handleResize);
+
+      chart.remove();
+      chartRef.current = null;
+    };
+  }, [chartContainerRef]);
+
+  return (
+    <main className="flex flex-col items-center justify-center min-h-screen w-full">
+      <div className="flex flex-row items-center justify-center gap-4 my-2">
+        <p className="whitespace-nowrap text-blue-500">Trophy Points by @u9g</p>
+        <span
+          className="whitespace-nowrap cursor-pointer text-orange-500"
+          onClick={() => setRange(range === "11" ? "2" : "" + (+range + 1))}
         >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
+          {range !== "11" ? (
+            <>Show players with top {range} trophy points</>
+          ) : (
+            <>Show all players</>
+          )}
+        </span>
+        <span
+          className="whitespace-nowrap cursor-pointer text-green-500"
+          onClick={() => setPriceScaleMode((x) => "" + ((+x + 1) % 4))}
+          title={
+            priceScaleModeAsNumber === 0
+              ? "Normal (Price scale shows prices. Price range changes linearly.)"
+              : priceScaleModeAsNumber === 1
+              ? "Logarithmic (Price scale shows prices. Price range changes logarithmically.)"
+              : priceScaleModeAsNumber === 2
+              ? "Percentage (Price scale shows percentage values according the first visible value of the price scale. * The first visible value is 0% in this mode.)"
+              : "Indexed to 100 (The same as percentage mode, but the first value is moved to 100.)"
+          }
         >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
+          Price Scale Mode:{" "}
+          {priceScaleModeAsNumber === 0
+            ? "Normal"
+            : priceScaleModeAsNumber === 1
+            ? "Logarithmic"
+            : priceScaleModeAsNumber === 2
+            ? "Percentage"
+            : "Indexed to 100"}
+        </span>
+        <span className="whitespace-nowrap text-gray-500">
+          {"<"}== click me!
+        </span>
+      </div>
+      <div ref={chartContainerRef} id="apple" className="w-full flex-1"></div>
+    </main>
   );
 }
