@@ -35,7 +35,9 @@ export default function Home() {
     const { current: chart } = chartRef;
     if (!chart || !data) return;
 
-    const datasets: Record<string, { time: number; value: number }[]> = {};
+    const datasets: Record<string, { time: UTCTimestamp; value: number }[]> =
+      {};
+
     for (const { collection_time, data: dat } of data as {
       collection_time: UTCTimestamp;
       data: string;
