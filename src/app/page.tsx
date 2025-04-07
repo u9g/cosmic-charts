@@ -119,43 +119,47 @@ export default function Home() {
 
   return (
     <main className="flex flex-col items-center justify-center min-h-[100dvh] w-full">
-      <div className="flex flex-row items-center justify-center gap-4 my-2">
-        <p className="whitespace-nowrap text-blue-500">Trophy Points by @u9g</p>
-        <span
-          className="whitespace-nowrap cursor-pointer text-orange-500"
-          onClick={() => setRange(range === "11" ? "2" : "" + (+range + 1))}
-        >
-          {range !== "11" ? (
-            <>Show players with top {range} trophy points</>
-          ) : (
-            <>Show all players</>
-          )}
-        </span>
-        <span
-          className="whitespace-nowrap cursor-pointer text-green-500"
-          onClick={() => setPriceScaleMode((x) => "" + ((+x + 1) % 4))}
-          title={
-            priceScaleModeAsNumber === 0
-              ? "Normal (Price scale shows prices. Price range changes linearly.)"
+      <div className="w-full overflow-x-auto">
+        <div className="flex flex-row items-center justify-center gap-4 my-2 min-w-max">
+          <p className="whitespace-nowrap text-blue-500">
+            Trophy Points by @u9g
+          </p>
+          <span
+            className="whitespace-nowrap cursor-pointer text-orange-500"
+            onClick={() => setRange(range === "11" ? "2" : "" + (+range + 1))}
+          >
+            {range !== "11" ? (
+              <>Show players with top {range} trophy points</>
+            ) : (
+              <>Show all players</>
+            )}
+          </span>
+          <span
+            className="whitespace-nowrap cursor-pointer text-green-500"
+            onClick={() => setPriceScaleMode((x) => "" + ((+x + 1) % 4))}
+            title={
+              priceScaleModeAsNumber === 0
+                ? "Normal (Price scale shows prices. Price range changes linearly.)"
+                : priceScaleModeAsNumber === 1
+                ? "Logarithmic (Price scale shows prices. Price range changes logarithmically.)"
+                : priceScaleModeAsNumber === 2
+                ? "Percentage (Price scale shows percentage values according the first visible value of the price scale. * The first visible value is 0% in this mode.)"
+                : "Indexed to 100 (The same as percentage mode, but the first value is moved to 100.)"
+            }
+          >
+            Price Scale Mode:{" "}
+            {priceScaleModeAsNumber === 0
+              ? "Normal"
               : priceScaleModeAsNumber === 1
-              ? "Logarithmic (Price scale shows prices. Price range changes logarithmically.)"
+              ? "Logarithmic"
               : priceScaleModeAsNumber === 2
-              ? "Percentage (Price scale shows percentage values according the first visible value of the price scale. * The first visible value is 0% in this mode.)"
-              : "Indexed to 100 (The same as percentage mode, but the first value is moved to 100.)"
-          }
-        >
-          Price Scale Mode:{" "}
-          {priceScaleModeAsNumber === 0
-            ? "Normal"
-            : priceScaleModeAsNumber === 1
-            ? "Logarithmic"
-            : priceScaleModeAsNumber === 2
-            ? "Percentage"
-            : "Indexed to 100"}
-        </span>
-        <span className="whitespace-nowrap text-gray-500">
-          {"<"}== click me! (send me thoughts on this on discord!)
-        </span>
+              ? "Percentage"
+              : "Indexed to 100"}
+          </span>
+          <span className="whitespace-nowrap text-gray-500">
+            {"<"}== click me! (send me thoughts on this on discord!)
+          </span>
+        </div>
       </div>
       <div ref={chartContainerRef} id="apple" className="w-full flex-1"></div>
     </main>
