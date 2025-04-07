@@ -118,7 +118,7 @@ export default function Home() {
   }, [chartContainerRef]);
 
   return (
-    <main className="flex flex-col items-center justify-center min-h-screen w-full">
+    <main className="flex flex-col items-center justify-center min-h-[100dvh] w-full">
       <div className="flex flex-row items-center justify-center gap-4 my-2">
         <p className="whitespace-nowrap text-blue-500">Trophy Points by @u9g</p>
         <span
