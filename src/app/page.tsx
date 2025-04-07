@@ -5,7 +5,6 @@ import {
   IChartApi,
   ISeriesApi,
   LineSeries,
-  TickMarkFormatter,
   UTCTimestamp,
 } from "lightweight-charts";
 import { useEffect, useRef, useState } from "react";
@@ -89,13 +88,16 @@ export default function Home() {
       width: chartContainerRef.current!.clientWidth,
       height: chartContainerRef.current!.clientHeight,
       timeScale: {
-        timeVisible: true, //(time: Time, tickMarkType: TickMarkType, locale: string) => string | null
-        tickMarkFormatter: ((time, tickMarkType, locale) => {
-          return new Date((time.valueOf() as number) * 1000).toLocaleString(
-            locale
-          );
-        }) as TickMarkFormatter,
-        // minBarSpacing: 140,
+        secondsVisible: false,
+        timeVisible: true,
+        tickMarkFormatter: (time: number) => {
+          const date = new Date(time * 1000);
+          return date.toLocaleString(undefined, {
+            hour: "numeric",
+            minute: "2-digit",
+            hour12: true,
+          });
+        },
       },
     });
 
