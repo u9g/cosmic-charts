@@ -67,16 +67,20 @@ export default function Home() {
       lineSeries.setData(data1);
       lineSeries.applyOptions({
         title: playerName,
+        priceFormat: {
+          // 11.00K
+          type: "volume",
+        },
         color: [
-          "#3B82F6",
-          "#8D74FC",
-          "#CF59F1",
-          "#FF2FC1",
-          "#FF5D6E",
-          "#FF9D3E",
-          "#E2C11F",
-          "#AEDD17",
-          "#3BF652",
+          "#3B82F677",
+          "#8D74FC77",
+          "#CF59F177",
+          "#FF2FC177",
+          "#FF5D6E77",
+          "#FF9D3E77",
+          "#E2C11F77",
+          "#AEDD1777",
+          "#3BF65277",
         ][Math.floor(i++ % 9)],
       });
     }
@@ -93,7 +97,7 @@ export default function Home() {
     // console.log(
     //   chart.timeScale().timeToIndex(chart.timeScale().getVisibleRange()!.to)!
     // );
-    // chart.timeScale().scrollToPosition(20, false);
+    chart.timeScale().scrollToPosition(13, false);
 
     return () => {
       allSeries.forEach((series) => {
