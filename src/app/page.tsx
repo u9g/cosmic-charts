@@ -2,6 +2,8 @@
 
 import {
   createChart,
+  createSeriesMarkers,
+  CrosshairMode,
   IChartApi,
   ISeriesApi,
   LineSeries,
@@ -57,6 +59,7 @@ export default function Home() {
     const allSeries: ISeriesApi<"Line">[] = [];
 
     let i = 0;
+    let smallest = Number.MAX_SAFE_INTEGER;
 
     for (const [playerName, data1] of Object.entries(datasets)
       .sort(([, a], [, b]) => b.at(-1)!.value - a.at(-1)!.value)
@@ -65,26 +68,61 @@ export default function Home() {
       lineSeries.attachPrimitive(new PartialPriceLine());
       allSeries.push(lineSeries);
       lineSeries.setData(data1);
+      const color = [
+        "#3B82F6",
+        "#8D74FC",
+        "#CF59F1",
+        "#FF2FC1",
+        "#FF5D6E",
+        "#FF9D3E",
+        "#E2C11F",
+        "#AEDD17",
+        "#3BF652",
+      ][Math.floor(i++ % 9)];
       lineSeries.applyOptions({
         title: playerName,
         priceFormat: {
           // 11.00K
           type: "volume",
         },
-        color: [
-          "#3B82F677",
-          "#8D74FC77",
-          "#CF59F177",
-          "#FF2FC177",
-          "#FF5D6E77",
-          "#FF9D3E77",
-          "#E2C11F77",
-          "#AEDD1777",
-          "#3BF65277",
-        ][Math.floor(i++ % 9)],
+        color,
       });
+
+      const markers = [data1]
+        .map((dataPoints) =>
+          dataPoints.flatMap((_, ix) => {
+            if (ix < 3 + 3) return [];
+
+            const shouldMarkDatapoint =
+              dataPoints[ix].value === dataPoints[ix - 1].value &&
+              dataPoints[ix - 1].value === dataPoints[ix - 2].value &&
+              dataPoints[ix - 2].value != dataPoints[ix - 3].value;
+
+            if (shouldMarkDatapoint) {
+              smallest = Math.min(smallest, dataPoints[ix - 6].time); // show 2 extra data points to make room to see the leftmost one
+            }
+
+            return shouldMarkDatapoint
+              ? [
+                  {
+                    time: dataPoints[ix - 2].time,
+                    position: "aboveBar",
+                    color: color,
+                    shape: "arrowDown",
+                    text: "Hit Level Cap",
+                    price: dataPoints[ix - 2].value,
+                  } satisfies Exclude<
+                    Parameters<typeof createSeriesMarkers>["1"],
+                    undefined
+                  >[number],
+                ]
+              : [];
+          })
+        )
+        .flat(1);
+
+      createSeriesMarkers(lineSeries, markers);
     }
-    chart.timeScale().fitContent();
 
     chart.applyOptions({
       rightPriceScale: {
@@ -92,12 +130,17 @@ export default function Home() {
       },
     });
 
-    chart.timeScale().fitContent();
+    chart.timeScale().setVisibleRange({
+      from: smallest as UTCTimestamp,
+      to: (Date.now() / 1000) as UTCTimestamp,
+    });
+
+    // chart.timeScale().fitContent();
     // show a little of the PartialPriceLine by having the screen a bit off center
     // console.log(
     //   chart.timeScale().timeToIndex(chart.timeScale().getVisibleRange()!.to)!
     // );
-    chart.timeScale().scrollToPosition(13, false);
+    // chart.timeScale().scrollToPosition(13, false);
 
     return () => {
       allSeries.forEach((series) => {
@@ -110,6 +153,9 @@ export default function Home() {
     const chart = createChart("apple", {
       width: chartContainerRef.current!.clientWidth,
       height: chartContainerRef.current!.clientHeight,
+      crosshair: {
+        mode: CrosshairMode.Magnet,
+      },
       timeScale: {
         secondsVisible: false,
         timeVisible: true,
